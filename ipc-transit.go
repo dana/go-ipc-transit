@@ -1,4 +1,4 @@
-package sysvipc
+package ipc-transit
 
 import (
 	"bufio"
