@@ -1,4 +1,4 @@
-package ipc-transit
+package ipctransit
 
 import (
 	"bufio"

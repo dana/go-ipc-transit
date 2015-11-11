@@ -1,4 +1,4 @@
-package ipc-transit_test
+package ipctransittest
 
 import (
 	"fmt"
