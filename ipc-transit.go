@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"github.com/teepark/go-sysvipc"
 )
 
 var defaultTransitPath string = "/tmp/ipc_transit/"
