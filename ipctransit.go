@@ -4,16 +4,16 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/teepark/go-sysvipc"
 	"os"
 	"strconv"
 	"strings"
-	"github.com/teepark/go-sysvipc"
 )
 
 var defaultTransitPath string = "/tmp/ipc_transit/"
 
 func Send(sendMessage map[string]interface{}, qname string) error {
-    var wireHeader = make(map[string]string)
+	var wireHeader = make(map[string]string)
 	wireHeader["q"] = qname
 	sendBytes, createWireHeaderErr := createWireHeader(wireHeader)
 	if createWireHeaderErr != nil {
@@ -32,7 +32,7 @@ func Send(sendMessage map[string]interface{}, qname string) error {
 	return sendErr
 }
 
-func RawSend(rawBytes []byte, queue MessageQueue) error {
+func RawSend(rawBytes []byte, queue sysvipc.MessageQueue) error {
 	err := queue.Send(1, rawBytes, nil)
 	return err
 }
@@ -62,7 +62,7 @@ func Receive(qname string) (interface{}, error) {
 
 	return f, receiveErr
 }
-func RawReceive(queue MessageQueue) ([]byte, error) {
+func RawReceive(queue sysvipc.MessageQueue) ([]byte, error) {
 	rawBytes, _, err := queue.Receive(102400000, -1, nil)
 	return rawBytes, err
 }
@@ -127,12 +127,12 @@ func makeNewQueue(qname string, queuePath string) error {
 		}
 	}()
 	fi.WriteString("qname=" + qname + "\n")
-	key, ftokErr := Ftok(queuePath, 100)
+	key, ftokErr := sysvipc.Ftok(queuePath, 100)
 	fi.WriteString("qid=" + strconv.Itoa(int(key)))
 	return ftokErr
 }
 
-func getQueue(qname string) (MessageQueue, error) {
+func getQueue(qname string) (sysvipc.MessageQueue, error) {
 	transitInfoFilePath := defaultTransitPath + qname
 	if _, statErr := os.Stat(transitInfoFilePath); os.IsNotExist(statErr) {
 		makeErr := makeNewQueue(qname, transitInfoFilePath)
@@ -142,62 +142,60 @@ func getQueue(qname string) (MessageQueue, error) {
 	}
 	info, err := parseTransitFile(transitInfoFilePath)
 	if err != nil {
-		return MessageQueue(0), err
+		return sysvipc.MessageQueue(0), err
 	}
-	mq, err := GetMsgQueue(info.qid, &MQFlags{
+	mq, err := sysvipc.GetMsgQueue(info.qid, &sysvipc.MQFlags{
 		Create: true,
 		//		Create:    false,
 		//		Exclusive: true,
 		//		Exclusive: false,
 		Perms: 0666,
 	})
-	if false {	//this is about always having a use of fmt.Println so I never
-				//have to take it out of imports
+	if false { //this is about always having a use of fmt.Println so I never
+		//have to take it out of imports
 		fmt.Println("whatevah")
 	}
 	return mq, err
 }
 
-
 func createWireHeader(headerMap map[string]string) ([]byte, error) {
-    headerBytes := []byte("")
-    for key, value := range headerMap {
-        headerBytes = append(headerBytes, key...)
-        headerBytes = append(headerBytes, "="...)
-        headerBytes = append(headerBytes, value...)
-        headerBytes = append(headerBytes, ","...)
-    }
-    if len(headerBytes) > 0 {
-        headerBytes = headerBytes[:len(headerBytes)-1]
-    }
-    ret := []byte(strconv.Itoa(len(headerBytes)))
-    ret = append(ret, ":"...)
-    ret = append(ret, headerBytes...)
-    return ret, nil
+	headerBytes := []byte("")
+	for key, value := range headerMap {
+		headerBytes = append(headerBytes, key...)
+		headerBytes = append(headerBytes, "="...)
+		headerBytes = append(headerBytes, value...)
+		headerBytes = append(headerBytes, ","...)
+	}
+	if len(headerBytes) > 0 {
+		headerBytes = headerBytes[:len(headerBytes)-1]
+	}
+	ret := []byte(strconv.Itoa(len(headerBytes)))
+	ret = append(ret, ":"...)
+	ret = append(ret, headerBytes...)
+	return ret, nil
 }
 
 func parseWireHeader(testInput []byte) (map[string]string, []byte, error) {
-    var retMap = make(map[string]string)
-    testString := string(testInput)
-    fullHeaderParts := strings.SplitN(testString, ":", 2)
-    headerLength,atoiErr := strconv.Atoi(fullHeaderParts[0])
-    if atoiErr != nil {
-        return retMap, nil, atoiErr
-    }
-    headerString := fullHeaderParts[1][0:headerLength]
-    payload := testInput[len(fullHeaderParts[0])+headerLength+1:]
-    headerParts := strings.Split(headerString, ",")
-    for _, part := range headerParts {
+	var retMap = make(map[string]string)
+	testString := string(testInput)
+	fullHeaderParts := strings.SplitN(testString, ":", 2)
+	headerLength, atoiErr := strconv.Atoi(fullHeaderParts[0])
+	if atoiErr != nil {
+		return retMap, nil, atoiErr
+	}
+	headerString := fullHeaderParts[1][0:headerLength]
+	payload := testInput[len(fullHeaderParts[0])+headerLength+1:]
+	headerParts := strings.Split(headerString, ",")
+	for _, part := range headerParts {
 		if len(part) > 0 {
-        	fields := strings.Split(part, "=")
-        	key := fields[0]
-        	value := fields[1]
-        	retMap[key] = value
+			fields := strings.Split(part, "=")
+			key := fields[0]
+			value := fields[1]
+			retMap[key] = value
 		}
-    }
-    return retMap, payload, nil
+	}
+	return retMap, payload, nil
 }
-
 
 /*
 Sat Nov  7 18:09:43 PST 2015
@@ -221,5 +219,3 @@ Full example of message including header
 
 11:d=localhost{".ipc_transit_meta":{"destination":"localhost","ttl":9,"destination_qname":"test","send_ts":1447014248},"1":2}
 */
-
-
