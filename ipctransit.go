@@ -47,15 +47,18 @@ func Receive(qname string) (interface{}, error) {
 	if receiveErr != nil {
 		return nil, receiveErr
 	}
-	wireHeader, payload, parseErr := parseWireHeader(rawBytes)
-	if _, ok := wireHeader["q"]; ok {
-		fmt.Println("recieved from q = " + wireHeader["q"])
-	}
+	_, payload, parseErr := parseWireHeader(rawBytes)
+	//this was the code previously.  We seem to not be doing anything
+	//meaningful with wireHeader.
+	/*	wireHeader, payload, parseErr := parseWireHeader(rawBytes)
+		if _, ok := wireHeader["q"]; ok {
+			fmt.Println("recieved from q = " + wireHeader["q"])
+		} */
 	if parseErr != nil {
 		return nil, parseErr
 	}
 	jsonErr := json.Unmarshal(payload, &f)
-	fmt.Println(f)
+	//fmt.Println(f)
 	if jsonErr != nil {
 		return f, jsonErr
 	}
@@ -109,7 +112,7 @@ func parseTransitFile(filePath string) (transitInfo, error) {
 }
 
 func makeNewQueue(qname string, queuePath string) error {
-	fmt.Println("makeNewQueue: " + qname)
+	//fmt.Println("makeNewQueue: " + qname)
 	if _, statErr := os.Stat(defaultTransitPath); os.IsNotExist(statErr) {
 		//dir does not exist
 		mkdirErr := os.Mkdir(defaultTransitPath, 0777)

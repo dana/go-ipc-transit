@@ -3,7 +3,7 @@ package ipctransit
 import (
 	"fmt"
 	"os"
-	"reflect"
+	//	"reflect"
 	"testing"
 )
 
@@ -38,7 +38,7 @@ func TestSendRcv(t *testing.T) {
 	}
 	msg := m.(map[string]interface{})
 	for k, v := range msg {
-		fmt.Println(k, " -> ", reflect.TypeOf(v))
+		//fmt.Println(k, " -> ", reflect.TypeOf(v))
 		switch vv := v.(type) {
 		case string:
 			if k == "Name" {
@@ -46,19 +46,19 @@ func TestSendRcv(t *testing.T) {
 					t.Error(receiveErr)
 				}
 			}
-			fmt.Println(k, "is string", vv)
+			//fmt.Println(k, "is string", vv)
 		case float64:
 			if k == "Age" {
 				if v != 6.0 { //very strange, even though it's an int in the json, it unmarshalled as a float
 					t.Error(receiveErr)
 				}
 			}
-			fmt.Println(k, "is float64", vv)
+			//fmt.Println(k, "is float64", vv)
 		case map[string]interface{}:
-			fmt.Println(k, "is an array:")
-			for i, u := range vv {
-				fmt.Println(i, u)
-			}
+			//fmt.Println(k, "is an array:")
+			//			for i, u := range vv {
+			//				fmt.Println(i, u)
+			//			}
 		default:
 			fmt.Println(k, "is of a type I don't know how to handle", vv)
 		}
